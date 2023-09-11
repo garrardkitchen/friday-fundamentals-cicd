@@ -1,8 +1,22 @@
+# Purpose
+
+This codebase has been created to demonstrate good DevOps practices such as CI, CD and test automation practices.
+
+This project consists of:
+
+- Azure DevOps Pipelines ([**`/.azdo/pipelines`**](.azdo/pipelines/)) - PR, CI & CD 
+- Application Code ([**`/src`**](src)) - Web and API
+- Test code ([**`/test`**](test)) - Integration (L3), E2E (L4) and unit testing (L0, L1)
+
+These test, and code coverage, are included as pipeline artefacts.
+
+I use ([**`docker-compose`**](docker-compose.yml)) to orchestrate the hosting of the API HTTP Listener so I can assert Integration tests.
+
 # Getting started
 
 ## Inner loop
 
-Run `.\winterm` to open Windows Terminal with pre-configured sln tabs
+Run [**`.\winterm`**](winterm.ps1) to open Windows Terminal with pre-configured sln tabs
 
 ### Testing
 
