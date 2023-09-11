@@ -5,15 +5,12 @@ networks:
   
 services:
   cover-web:
-    # image: "mcr.microsoft.com/mssql/server"
     build:
       context: .
       dockerfile: src/Api/Dockerfile
     ports:
       - "5289:80"
     environment:
-        SA_PASSWORD: "2@LaiNw)PDvs^t>L!Ybt]6H^%h3U>M"
-        ACCEPT_EULA: "Y"
         ASPNET_ENVIRONMENT: "Development"
     networks:
       - cover-network
