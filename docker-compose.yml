@@ -1,10 +1,10 @@
 version: "3.7"
 
 networks:
-  cover-network:
+  api-network:
   
 services:
-  cover-web:
+  api:
     build:
       context: .
       dockerfile: src/Api/Dockerfile
@@ -13,4 +13,4 @@ services:
     environment:
         ASPNET_ENVIRONMENT: "Development"
     networks:
-      - cover-network
+      - api-network
