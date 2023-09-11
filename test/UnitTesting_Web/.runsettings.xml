@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>                              
+          <ExcludeByFile>**/*Controllers/PolicyController.cs,**/*Data/*.cs,**/*Views/**/*.cshtml,**/*Program.cs,**/Models/Configuration/*.cs,**/Models/*ViewModel*.cs,**/Models/Policy/PolicyModel.cs,**/Models/PolicyCoverResponse.cs</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

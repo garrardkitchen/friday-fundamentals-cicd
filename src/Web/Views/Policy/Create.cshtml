@@ -1,0 +1,61 @@
+﻿@model PolicyModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>PolicyModel</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @*<div class="form-group">
+                <label asp-for="PolicyId" class="control-label"></label>
+                <input asp-for="PolicyId" class="form-control" />
+                <span asp-validation-for="PolicyId" class="text-danger"></span>
+            </div>*@
+            <div class="form-group">
+                <label asp-for="CustomerId" class="control-label"></label>
+                <input asp-for="CustomerId" class="form-control" />
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CoverType" class="control-label"></label>
+                <select asp-for="CoverType" class="form-control">
+                    <option value="0">Home</option>
+                    <option value="1">Car</option>
+                    <option value="2">Holiday</option>
+                </select>
+                <span asp-validation-for="CoverType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PeriodType" class="control-label"></label>
+                <select asp-for="PeriodType" class="form-control">
+                    <option value="0">Days</option>
+                    <option value="1">Months</option>
+                    <option value="2">Years</option>
+                </select>
+                <span asp-validation-for="PeriodType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PeriodDuration" class="control-label"></label>
+                <input asp-for="PeriodDuration" class="form-control" />
+                <span asp-validation-for="PeriodDuration" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

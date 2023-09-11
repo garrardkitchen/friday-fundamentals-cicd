@@ -1,0 +1,113 @@
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    exclude:
+      - 'NOTES.ipynb'
+
+resources:
+  repositories:
+  - repository: templates
+    type: github
+    name: garrardkitchen/friday-fundamentals-cicd-ado-templates
+    ref: main
+    endpoint: garrardkitchen
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureSubscription: DevelopmentSub
+  dotnetRuntime: '7.0.x'
+  buildConfiguration: Release
+
+stages:
+
+  - stage: BuildApps
+    displayName: Build Apps
+    jobs:
+    - job: BuildWeb      
+      displayName: Build Web
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: Web
+            toPublishZip: true
+            toPublishApp: true
+
+    - job: BuildApi
+      displayName: Build Api
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: Api
+            toPublishZip: true
+            toPublishApp: true
+
+  - stage: BuildTests
+    dependsOn: BuildApps
+    displayName: Build Tests
+    jobs:
+
+    - job: BuildApiUnitTests
+      displayName: Build Api Unit Tests
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: UnitTesting_Api
+            folder: test
+            toPublishZip: false
+            toPublishApp: true
+
+    - job: BuildWebUnitTests
+      displayName: Build Web Unit Tests
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: UnitTesting_Web
+            folder: test
+            toPublishZip: false
+            toPublishApp: true
+
+  - stage: Testing
+    dependsOn: BuildTests
+    displayName: Run Tests
+    jobs:
+    - job: UnitTesting
+      displayName: Unit Testing
+      steps:      
+        - template: templates/dotnet-unittests.yml@templates    
+
+    - job: IntegrationTesting
+      displayName: Integration Testing
+      dependsOn: UnitTesting
+      steps:      
+
+      - checkout: self
+        clean: true
+
+      - task: DockerCompose@0
+        displayName: Start dependencies (docker-compose)
+        inputs:
+          containerregistrytype: Container Registry
+          dockerComposeFile: docker-compose.yml
+          dockerComposeCommand: 'up -d'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Run Api Integration Tests - L3'
+        inputs:
+          command: 'test'
+          projects: '$(Build.SourcesDirectory)/test/IntegrationTesting/IntegrationTesting.csproj'
+          arguments: '--configuration $(buildConfiguration) --collect "XPlat Code Coverage" --logger trx --results-directory $(Build.SourcesDirectory)/test/TestResults --filter TestCategory=L3' 
+          publishTestResults: false
+          testRunTitle: 'Api Integration Tests'   
+
+      - task: PublishTestResults@2
+        displayName: 'Publish Integration Test Results'
+        inputs:
+          testResultsFormat: VSTest
+          testResultsFiles: '**/*.trx'
+          searchFolder: '$(Build.SourcesDirectory)/test/TestResults'

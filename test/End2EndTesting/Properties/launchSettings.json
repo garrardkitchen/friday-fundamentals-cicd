@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "End2EndTesting": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "TEST_URI": "http://localhost:5113/"
+      }
+    }
+  }
+}

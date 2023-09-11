@@ -1,0 +1,177 @@
+name: "$(Build.DefinitionName).$(Date:yyyy).$(Date:MM).$(Date:dd).$(Rev:r)"
+
+trigger: none
+
+pr: none
+
+resources:
+  pipelines:
+  - pipeline: CIDrop
+    source: CI
+    trigger:
+      branches:
+        include:
+        - main        
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureSubscription: DevelopmentSub
+  dotnetRuntime: '7.0.x'
+  dotnetVersion: 'net7.0'
+  buildConfiguration: Release
+  testUri: ff-cicd-test
+  prodUri: ff-cicd-prod
+  testApiUri: ff-cicd-api-test
+  prodApiUri: ff-cicd-api-prod
+  kv: kv-friday-fundamentals
+  kvSecret: LastGoodConfiguration
+
+stages:
+
+  - stage: DeployToTest
+    displayName: Deploy to Test
+    jobs:
+    
+    - job: DeployApiToTest
+      displayName: Deploy Api
+      steps:
+
+        - checkout: none
+   
+        - script: |            
+            echo pipelineID: $(resources.pipeline.CIDrop.pipelineID)
+            echo runName: $(resources.pipeline.CIDrop.runName)
+            echo runID: $(resources.pipeline.CIDrop.runID)
+            echo runURI: $(resources.pipeline.CIDrop.runURI)
+            echo sourceBranch: $(resources.pipeline.CIDrop.sourceBranch)
+            echo sourceCommit: $(resources.pipeline.CIDrop.sourceCommit)
+            echo sourceProvider: $(resources.pipeline.CIDrop.sourceProvider)
+            echo requestedFor: $(resources.pipeline.CIDrop.requestedFor)
+            echo requestedForID: $(resources.pipeline.CIDrop.requestedForID) 
+            echo Build.SourcesDirectory: $(Build.SourcesDirectory)
+            echo Pipeline.Workspace: $(Pipeline.Workspace)
+            echo Build.ArtifactStagingDirectory: $(Build.ArtifactStagingDirectory)          
+            echo Agent.BuildDirectory: $(Agent.BuildDirectory)
+          displayName: 'Trigger resource summary'  
+
+        - download: CIDrop
+          artifact: Apizip-drop   
+            
+        - task: AzureWebApp@1
+          displayName: Azure Api Deploy
+          inputs:
+            azureSubscription: $(azureSubscription)
+            appName: $(testApiUri)
+            package: '$(Pipeline.Workspace)/CIDrop/Apizip-drop/**/*.zip'
+    
+    - job: DeployWebToTest
+      displayName: Deploy Web
+      dependsOn: DeployApiToTest
+      steps:
+
+        - checkout: none
+   
+        - download: CIDrop
+          artifact: Webzip-drop   
+            
+        - task: AzureWebApp@1
+          displayName: Azure Web App Deploy
+          inputs:
+            azureSubscription: $(azureSubscription)
+            appName: $(testUri)
+            package: '$(Pipeline.Workspace)/CIDrop/Webzip-drop/**/*.zip'
+            appSettings: -AppOptions__ApiUri https://$(testApiUri).azurewebsites.net
+
+  - stage: Testing
+    displayName: Testing    
+    dependsOn: DeployToTest
+    jobs:
+
+    - job: End2EndTesting
+      displayName: End to End Testing
+      steps:
+
+        - checkout: self
+          clean: true         
+          displayName: Checkout End2EndTesting
+
+        - task: UseDotNet@2
+          displayName: Use .NET $(dotnetRuntime) SDK
+          inputs:
+            packageType: sdk
+            version: $(dotnetRuntime)    
+
+        - task: DotNetCoreCLI@2
+          displayName: Build
+          inputs:
+            command: build
+            projects: '$(Build.SourcesDirectory)/test/End2EndTesting/End2EndTesting.csproj'
+            arguments: '--configuration $(buildConfiguration)'
+
+        - script: |            
+            cd $(Build.SourcesDirectory)/test/End2EndTesting      
+            ls -lt $(Build.SourcesDirectory)/test/End2EndTesting/bin/$(buildConfiguration)
+            pwsh $(Build.SourcesDirectory)/test/End2EndTesting/bin/$(buildConfiguration)/$(dotnetVersion)/playwright.ps1 install --with-deps
+          displayName: 'Install Playwright browsers'  
+
+        - script: |
+            export TEST_URI=https://$(testUri).azurewebsites.net/
+            cd $(Build.SourcesDirectory)/test/End2EndTesting
+            ls -lt
+            dotnet test --configuration $(buildConfiguration) --collect "XPlat Code Coverage" --logger trx --results-directory $(Build.SourcesDirectory)/test/TestResults
+          displayName: 'Run tests'
+
+        - task: PublishTestResults@2
+          condition: succeededOrFailed() 
+          displayName: 'Publish Test Results'
+          inputs:
+            testResultsFormat: VSTest
+            testResultsFiles: '**/*.trx'
+            searchFolder: '$(Build.SourcesDirectory)/test/TestResults'
+
+  - stage: DeployToProd
+    displayName: Deploy to Prod
+    dependsOn: Testing
+    jobs:
+    - deployment: DeployoProd
+      environment: Production
+      displayName: Deploy Api & Web
+      strategy: 
+        runOnce:
+          deploy:
+            steps:
+              - checkout: none
+        
+              - download: CIDrop
+                artifact: Webzip-drop   
+
+              - download: CIDrop
+                artifact: Apizip-drop   
+                  
+              - task: AzureWebApp@1
+                displayName: Azure Web App Deploy
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  appName: $(prodUri)
+                  package: '$(Pipeline.Workspace)/CIDrop/Webzip-drop/**/*.zip'  
+                  appSettings: -AppOptions__ApiUri https://$(prodApiUri).azurewebsites.net 
+                
+              - task: AzureWebApp@1
+                displayName: Azure Api Deploy
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  appName: $(prodApiUri)
+                  package: '$(Pipeline.Workspace)/CIDrop/Apizip-drop/**/*.zip'
+
+          on:          
+            success:
+              steps:
+              - task: AzureCLI@2
+                displayName: Store LastGoodConfiguration
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  scriptType: 'bash'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: "az keyvault secret set --vault-name '$(kv)' --name '$(kvSecret)' --value '$(resources.pipeline.CIDrop.sourceCommit)'"

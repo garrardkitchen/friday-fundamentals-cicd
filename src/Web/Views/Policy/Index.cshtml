@@ -1,0 +1,53 @@
+﻿@model IEnumerable<PolicyModel>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.CustomerId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CoverType)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PeriodType)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PeriodDuration)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.CustomerId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CoverType)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PeriodType)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PeriodDuration)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.PolicyId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.PolicyId">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.PolicyId" class="btn btn-danger btn-sm">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

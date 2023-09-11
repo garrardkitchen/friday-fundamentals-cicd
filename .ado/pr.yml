@@ -1,0 +1,77 @@
+trigger: none
+
+pr:
+- main
+
+resources:
+  repositories:
+  - repository: templates
+    type: github
+    name: garrardkitchen/friday-fundamentals-cicd-ado-templates
+    ref: main
+    endpoint: garrardkitchen
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureSubscription: DevelopmentSub
+  dotnetRuntime: '7.0.x'
+  buildConfiguration: Release
+
+stages:
+
+  - stage: BuildApps
+    displayName: Build Apps
+    jobs:
+    - job: BuildWeb      
+      displayName: Build Web
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: Web
+            toPublishZip: false
+            toPublishApp: true
+
+    - job: BuildApi
+      displayName: Build Api
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: Api
+            toPublishZip: false
+            toPublishApp: true
+
+  - stage: BuildTests
+    dependsOn: BuildApps
+    displayName: Build Tests
+    jobs:
+
+    - job: BuildApiUnitTests
+      displayName: Build Api Unit Tests
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: UnitTesting_Api
+            folder: test
+            toPublishZip: false
+            toPublishApp: true
+
+    - job: BuildWebUnitTests
+      displayName: Build Web Unit Tests
+      steps:
+        - template: templates/dotnet-build.yml@templates
+          parameters:
+            applicationName: UnitTesting_Web
+            folder: test
+            toPublishZip: false
+            toPublishApp: true
+
+  - stage: Testing
+    dependsOn: BuildTests
+    displayName: Run Tests
+    jobs:
+    - job: UnitTesting
+      displayName: Unit Testing
+      steps:      
+        - template: templates/dotnet-unittests.yml@templates          

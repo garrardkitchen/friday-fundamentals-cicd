@@ -1,0 +1,63 @@
+﻿@model CoverPolicyViewModel
+
+@{
+    ViewData["Title"] = "Estimate";
+}
+
+    <div class="row">
+        <div class="col-md-4">
+
+            @using (Html.BeginForm())   
+{
+            <div class="card text-center">
+                <div class="card-header">
+                    Estimate
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Criteria</h5>
+                    <p class="card-text">Choose type of cover and enter duration</p>
+                  
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="form-group">
+                        <label asp-for="CoverType" class="control-label"></label>
+
+                        <select asp-for="CoverType" class="form-control" id="num_cover">
+                            <option value="0">Home</option>
+                            <option value="1">Car</option>
+                            <option value="2">Holiday</option>
+                        </select>
+                    </div>                                     
+
+                    <div class="form-group">
+                        <label asp-for="PeriodType" class="control-label"></label>
+                        <select asp-for="PeriodType" class="form-control" id="num_period">
+                            <option value="0">Days</option>
+                            <option value="1">Months</option>
+                            <option value="2">Years</option>
+                        </select>
+                        <span asp-validation-for="PeriodType" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="People" class="control-label"></label>
+                        <input type="number" id="num_people" asp-for="@Model.People" class="form-control" aria-labelledby="peopleHelpBlock" />
+                        <div id="peopleHelpBlock" class="form-text">
+                            The number of days, months or years the policy will be for
+                        </div>
+                        <span asp-validation-for="People" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="submit" id="btn_submit" name="Calculate" value="Calculate" asp-controller="Index" asp-action="CalculatePolicy" class="btn btn-primary" />
+                    </div>
+
+                </div>
+                <div class="card-footer text-body-secondary">
+                    <label id="dec_cost" asp-for="@Model.Cost" class="fw-bold text-primary">£@Model.Cost</label>
+                </div>
+            </div>
+}
+
+    </div>
+</div>
